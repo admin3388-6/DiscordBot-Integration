@@ -1,7 +1,6 @@
 // Required Libraries
 const { 
-    Client, GatewayIntentBits, Events, EmbedBuilder, 
-    ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder 
+    Client, GatewayIntentBits, Events, EmbedBuilder 
 } = require('discord.js');
 const fs = require('fs').promises; 
 require('dotenv').config();
@@ -10,11 +9,13 @@ require('dotenv').config();
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages, // Needed for reading messages
+        GatewayIntentBits.MessageContent // Needed for reading message content (the '!')
     ],
 });
 
+const PREFIX = '!'; // Define the command prefix
 let marketData = []; // Will hold the item data
-const CUSTOM_ID_PREFIX = 'select_price_'; // Prefix for the interactive menu
 
 // Helper function to parse price (1b, 50m) into a number 
 function parsePrice(priceStr) {
@@ -66,7 +67,7 @@ function createPriceEmbed(item) {
             { name: '📦 Category', value: item.category, inline: true }
         )
         .setThumbnail(item.icon)
-        .setFooter({ text: 'Market Search powered by Bot' });
+        .setFooter({ text: `Use ${PREFIX}price [Item Name] to check price.` });
 }
 
 
@@ -74,80 +75,62 @@ function createPriceEmbed(item) {
 client.once(Events.ClientReady, async () => {
     await loadMarketData();
     console.log(`✅ Bot is Ready! Logged in as ${client.user.tag}`);
-    console.log(`⚙️ Bot is listening for Slash Commands and Interactions.`);
+    console.log(`⚙️ Bot is listening for '${PREFIX}' commands.`);
 });
 
+// Message Listener for Prefix Commands
+client.on(Events.MessageCreate, async message => {
+    // Ignore messages from other bots or messages that don't start with the prefix
+    if (!message.content.startsWith(PREFIX) || message.author.bot) return;
 
-// Interaction (Slash Command) Listener
-client.on(Events.InteractionCreate, async interaction => {
     if (marketData.length === 0) {
-        if (interaction.isRepliable()) {
-             await interaction.reply({ content: 'Error: Market data is currently unavailable. Please check the logs.', ephemeral: true });
-        }
+        await message.reply('Error: Market data is currently unavailable. Please check the logs.');
         return;
     }
 
-    // --- 1. Handle Slash Commands (/command) ---
-    if (interaction.isChatInputCommand()) {
-        const { commandName } = interaction;
+    // Split message into command and arguments
+    const args = message.content.slice(PREFIX.length).trim().split(/ +/);
+    const command = args.shift().toLowerCase();
 
-        if (commandName === 'ping') {
-            await interaction.reply({ content: 'Pong!', ephemeral: true });
-            
-        } else if (commandName === 'price') {
-            
-            // Build the Select Menu options
-            const options = marketData.map(item => 
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(item.name)
-                    // The value will be the exact item name, which we will search for later
-                    .setValue(item.name) 
-                    .setDescription(`Price: ${item.price} | Status: ${item.sales}`)
-            );
-            
-            // Create the Select Menu
-            const select = new StringSelectMenuBuilder()
-                .setCustomId(CUSTOM_ID_PREFIX + 'item_select')
-                .setPlaceholder('Select an item to check its price...')
-                .addOptions(options);
-
-            // Create the Action Row (the container for the menu)
-            const row = new ActionRowBuilder()
-                .addComponents(select);
-
-            // Send the menu to the user
-            await interaction.reply({
-                content: 'Please select an item from the list below:',
-                components: [row],
-                ephemeral: true // Make the message private to the user
-            });
-        }
+    if (command === 'ping') {
+        await message.reply('Pong!');
+        return;
     }
 
-    // --- 2. Handle Select Menu Interactions (User selection) ---
-    if (interaction.isStringSelectMenu()) {
-        if (!interaction.customId.startsWith(CUSTOM_ID_PREFIX)) return;
+    if (command === 'price') {
+        const query = args.join(' ').toLowerCase().trim();
 
-        await interaction.deferReply({ ephemeral: true }); // Acknowledge the interaction immediately
+        if (!query) {
+            // Case 1: No query provided (show the list)
+            const allItems = marketData.map(item => `\`${item.name}\``).join(' | ');
+            
+            const listEmbed = new EmbedBuilder()
+                .setColor(0xfdcb6e)
+                .setTitle('📋 Market Item List')
+                .setDescription(`Please specify an item from the list below:\n\n${allItems}`)
+                .setFooter({ text: `Use ${PREFIX}price [Item Name]` });
 
-        const selectedItemName = interaction.values[0];
-        
-        // Find the selected item from the loaded data
-        const foundItem = marketData.find(item => item.name === selectedItemName);
+            await message.reply({ embeds: [listEmbed] });
+            return;
+        }
+
+        // Case 2: Query provided (search for the item)
+        const foundItem = marketData.find(item => 
+            item.name.toLowerCase() === query || 
+            item.name.toLowerCase().includes(query)
+        );
 
         if (foundItem) {
             const priceEmbed = createPriceEmbed(foundItem);
-            // Edit the reply to show the price embed
-            await interaction.editReply({ 
-                content: `You selected **${foundItem.name}**.`, 
-                embeds: [priceEmbed], 
-                components: [] // Remove the menu after selection
-            });
+            await message.reply({ embeds: [priceEmbed] });
         } else {
-            await interaction.editReply({ content: 'Error: Could not find the price for the selected item.', components: [] });
+            await message.reply(`❌ Item not found. Please use \`${PREFIX}price\` for the full list of items.`);
         }
     }
 });
 
 // Bot Login
-client.login(process.env.BOT_TOKEN);
+client.login(process.env.BOT_TOKEN).catch(error => {
+    // This catches the TokenInvalid error if the token is still wrong.
+    console.error('❌ BOT LOGIN FAILED. Please ensure BOT_TOKEN in Railway variables is correct.', error);
+});
