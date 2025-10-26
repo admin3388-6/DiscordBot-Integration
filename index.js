@@ -17,22 +17,9 @@ const client = new Client({
 const PREFIX = '!'; // Define the command prefix
 let marketData = []; // Will hold the item data
 
-// New: Map for Arabic-to-English translation to support Arabic search
-const arabicItemMap = new Map([
-    // أضف هنا المزيد من الترجمات التي تحتاجها - القيمة هنا يجب أن تكون الاسم الإنجليزي الصحيح في market_data.json
-    ['الماس', 'Diamond'],
-    ['دايموند', 'Diamond'],
-    ['ذهب', 'Gold'],
-    ['سيف', 'Sword'],
-    ['فأس', 'Axe'],
-    ['حديد', 'Iron'],
-    ['خشب', 'Wood'],
-    ['درع', 'Armor'],
-]);
-
 // --- Helper Functions ---
 
-// Function to parse price (1b, 50m) into a number 
+// Function to parse price (1b, 50m) into a number for comparison/sorting
 function parsePrice(priceStr) {
     if (!priceStr) return 0;
     const lowerPrice = priceStr.toLowerCase().replace(/,/g, '');
@@ -64,7 +51,7 @@ async function loadMarketData() {
         console.log(`✅ Successfully loaded ${marketData.length} items from market_data.json.`);
     } catch (error) {
         console.error('❌ FATAL ERROR: Could not find or parse market_data.json! Commands will fail.', error);
-        marketData = []; 
+        marketData = []; // Clear data on failure
     }
 }
 
@@ -121,30 +108,30 @@ client.on(Events.MessageCreate, async message => {
         const helpEmbed = new EmbedBuilder()
             .setColor(0x0099ff) 
             .setTitle('📚 Bot Command Guide')
-            .setDescription(`مرحباً! أنا هنا لمساعدتك في الحصول على أسعار أغراض السوق. جميع الأوامر تبدأ بالبادئة \`${PREFIX}\`.\n\n**الأوامر المتاحة:**`)
+            .setDescription(`Hello! I'm here to help you get market item prices. All commands start with the prefix \`${PREFIX}\`.\n\n**Available Commands:**`)
             .addFields(
                 { 
                     name: `💡 \`${PREFIX}price\``, 
-                    value: 'لعرض **قائمة بجميع الأغراض المتاحة** للاستعلام عنها في السوق.', 
+                    value: 'Shows a **list of all available items** to query.', 
                     inline: false 
                 },
                 { 
-                    name: `🏷️ \`${PREFIX}price [اسم الغرض]\``, 
-                    value: 'للحصول على **سعر وتفاصيل غرض محدد**. مثال: `!price Diamond` أو `!price الماس`', 
+                    name: `🏷️ \`${PREFIX}price [Item Name]\``, 
+                    value: 'Gets the **price and details for a specific item**. Example: `!price Diamond`', 
                     inline: false 
                 },
                 { 
                     name: `❓ \`${PREFIX}help\``, 
-                    value: 'لعرض هذا الدليل مجدداً.', 
+                    value: 'Displays this guide again.', 
                     inline: true 
                 },
                 { 
                     name: `🧪 \`${PREFIX}ping\``, 
-                    value: 'لفحص حالة البوت (يجب أن يرد بـ Pong!).', 
+                    value: 'Checks the bot status (should reply with Pong!).', 
                     inline: true 
                 }
             )
-            .setFooter({ text: 'سهولة الوصول إلى معلومات السوق بين يديك!' });
+            .setFooter({ text: 'Easy access to market information!' });
 
         await message.reply({ embeds: [helpEmbed] });
         return;
@@ -167,7 +154,7 @@ client.on(Events.MessageCreate, async message => {
             const listEmbed = new EmbedBuilder()
                 .setColor(0xfdcb6e)
                 .setTitle('📋 Market Item List (Available Items)')
-                .setDescription(`الرجاء تحديد غرض من القوائم أدناه. استخدم \`${PREFIX}price [Item Name]\`:\n\n`)
+                .setDescription(`Please select an item from the lists below. Use \`${PREFIX}price [Item Name]\`:\n\n`)
                 .setFooter({ text: `Total Items: ${marketData.length}` });
 
             // Add fields for the items
@@ -185,25 +172,18 @@ client.on(Events.MessageCreate, async message => {
         }
 
         // Case 2: Query provided (search for the item)
-        let searchName = query;
-        
-        // Check if the query is an Arabic name and map it to the English name
-        if (arabicItemMap.has(query)) {
-            searchName = arabicItemMap.get(query).toLowerCase();
-        }
-
         const foundItem = marketData.find(item => 
-            // 1. Exact match with English name (or mapped Arabic name)
-            item.name.toLowerCase() === searchName || 
+            // 1. Exact match with English name
+            item.name.toLowerCase() === query || 
             // 2. Partial match with English name (for easier typing)
-            item.name.toLowerCase().includes(searchName)
+            item.name.toLowerCase().includes(query)
         );
 
         if (foundItem) {
             const priceEmbed = createPriceEmbed(foundItem);
             await message.reply({ embeds: [priceEmbed] });
         } else {
-            await message.reply(`❌ الغرض غير موجود. الرجاء استخدام \`${PREFIX}price\` لرؤية القائمة الكاملة.`);
+            await message.reply(`❌ Item not found. Please use \`${PREFIX}price\` for the full list of items.`);
         }
     }
 });
@@ -213,7 +193,7 @@ client.login(process.env.BOT_TOKEN).catch(error => {
     // Crucial error logging for token issue
     if (error.code === 'TokenInvalid') {
         console.error('❌ FATAL ERROR: BOT LOGIN FAILED. The provided BOT_TOKEN is INVALID.');
-        console.error('>> الرجاء التأكد من تغيير الرمز السري (Token) في بوابة مطوري ديسكورد ثم تحديث متغير BOT_TOKEN في Railway.');
+        console.error('>> Please ensure the BOT_TOKEN in your Railway variables is correct and up to date.');
     } else {
         console.error('❌ An unexpected error occurred during bot login:', error);
     }
