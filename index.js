@@ -1,18 +1,20 @@
 // Required Libraries
-const { Client, GatewayIntentBits, Events, EmbedBuilder } = require('discord.js');
-const fs = require('fs').promises; // File system module
+const { 
+    Client, GatewayIntentBits, Events, EmbedBuilder, 
+    ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder 
+} = require('discord.js');
+const fs = require('fs').promises; 
 require('dotenv').config();
 
 // Client Setup
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
     ],
 });
 
 let marketData = []; // Will hold the item data
+const CUSTOM_ID_PREFIX = 'select_price_'; // Prefix for the interactive menu
 
 // Helper function to parse price (1b, 50m) into a number 
 function parsePrice(priceStr) {
@@ -20,11 +22,11 @@ function parsePrice(priceStr) {
     const lowerPrice = priceStr.toLowerCase().replace(/,/g, '');
     let multiplier = 1;
     
-    if (lowerPrice.includes('b')) { // billion
+    if (lowerPrice.includes('b')) { 
         multiplier = 1000000000;
-    } else if (lowerPrice.includes('m')) { // million
+    } else if (lowerPrice.includes('m')) { 
         multiplier = 1000000;
-    } else if (lowerPrice.includes('k')) { // thousand
+    } else if (lowerPrice.includes('k')) { 
         multiplier = 1000;
     }
     
@@ -45,122 +47,105 @@ async function loadMarketData() {
         
         console.log(`✅ Successfully loaded ${marketData.length} items from market_data.json.`);
     } catch (error) {
-        console.error('❌ FATAL ERROR: Could not find or parse market_data.json! Price commands will fail.', error);
+        console.error('❌ FATAL ERROR: Could not find or parse market_data.json! Commands will fail.', error);
         marketData = [];
     }
 }
+
+// Function to generate the price Embed
+function createPriceEmbed(item) {
+    const statusEmoji = item.sales === 'hot' ? '🔥' : '❄️';
+    
+    return new EmbedBuilder()
+        .setColor(item.sales === 'hot' ? 0xff6b6b : 0x6bb0ff)
+        .setTitle(`🏷️ ${item.name}`)
+        .addFields(
+            { name: '💰 Current Price', value: `**${item.price}**`, inline: true },
+            { name: '🌟 Status', value: `${statusEmoji} ${item.sales === 'hot' ? 'Hot' : 'Cold'}`, inline: true },
+            { name: '🗓️ Last Update', value: item.lastUpdate, inline: true },
+            { name: '📦 Category', value: item.category, inline: true }
+        )
+        .setThumbnail(item.icon)
+        .setFooter({ text: 'Market Search powered by Bot' });
+}
+
 
 // Client Ready Event
 client.once(Events.ClientReady, async () => {
     await loadMarketData();
     console.log(`✅ Bot is Ready! Logged in as ${client.user.tag}`);
-    console.log(`⚙️ Bot is listening for '!' commands.`);
+    console.log(`⚙️ Bot is listening for Slash Commands and Interactions.`);
 });
 
 
-// Message Command Listener
-client.on(Events.MessageCreate, async message => {
-    if (message.author.bot) return;
-
-    const prefix = '!';
-    const content = message.content.trim().toLowerCase();
-    const fullContent = message.content.trim();
-
-    // 1. HELP Command: !help
-    if (content === `${prefix}help`) {
-        const helpEmbed = new EmbedBuilder()
-            .setColor(0x0099ff)
-            .setTitle('Bot Commands List')
-            .setDescription('Here are the available commands to interact with the market data:')
-            .addFields(
-                { name: `\`${prefix}price <Item Name>\``, value: 'Get the current price and details of a specific item. (e.g., `!price Jester Hat`)', inline: false },
-                { name: `\`${prefix}list\``, value: `Show a list of all available items in the database.`, inline: true },
-                { name: `\`${prefix}ping\``, value: 'Check if the bot is operational.', inline: true },
-                { name: 'Tip', value: 'For `!price`, you can search for just part of the item name!', inline: false }
-            )
-            .setTimestamp()
-            .setFooter({ text: 'Use these commands to access the market database.' });
-        
-        return message.reply({ embeds: [helpEmbed] });
+// Interaction (Slash Command) Listener
+client.on(Events.InteractionCreate, async interaction => {
+    if (marketData.length === 0) {
+        if (interaction.isRepliable()) {
+             await interaction.reply({ content: 'Error: Market data is currently unavailable. Please check the logs.', ephemeral: true });
+        }
+        return;
     }
 
-    // 2. LIST Command: !list
-    if (content === `${prefix}list`) {
-        if (marketData.length === 0) {
-            return message.reply('Error: Market data is unavailable. Cannot list items.');
+    // --- 1. Handle Slash Commands (/command) ---
+    if (interaction.isChatInputCommand()) {
+        const { commandName } = interaction;
+
+        if (commandName === 'ping') {
+            await interaction.reply({ content: 'Pong!', ephemeral: true });
+            
+        } else if (commandName === 'price') {
+            
+            // Build the Select Menu options
+            const options = marketData.map(item => 
+                new StringSelectMenuOptionBuilder()
+                    .setLabel(item.name)
+                    // The value will be the exact item name, which we will search for later
+                    .setValue(item.name) 
+                    .setDescription(`Price: ${item.price} | Status: ${item.sales}`)
+            );
+            
+            // Create the Select Menu
+            const select = new StringSelectMenuBuilder()
+                .setCustomId(CUSTOM_ID_PREFIX + 'item_select')
+                .setPlaceholder('Select an item to check its price...')
+                .addOptions(options);
+
+            // Create the Action Row (the container for the menu)
+            const row = new ActionRowBuilder()
+                .addComponents(select);
+
+            // Send the menu to the user
+            await interaction.reply({
+                content: 'Please select an item from the list below:',
+                components: [row],
+                ephemeral: true // Make the message private to the user
+            });
         }
-
-        // Get only the item names
-        const itemNames = marketData.map(item => item.name);
-        
-        // Format the names into columns/groups for a clean message
-        let listMessage = "## Available Market Items:\n";
-        
-        // Split list into chunks of 10 items per line for better readability
-        const chunkSize = 10;
-        for (let i = 0; i < itemNames.length; i += chunkSize) {
-            listMessage += itemNames.slice(i, i + chunkSize).join(' | ') + '\n';
-        }
-
-        // Add note to copy-paste the name for the price command
-        listMessage += "\n**Copy the name of the item and use it with the `!price` command.**";
-
-        // Since the list might be long, check if it exceeds Discord's limit (2000 chars)
-        if (listMessage.length > 2000) {
-            // If too long, simplify the list (Discord has limits for simple messages)
-            listMessage = `List too long for one message. Found ${marketData.length} items. Use \`!price <part of name>\` to search.`;
-        }
-
-        return message.reply(listMessage);
     }
-    
-    // 3. Price Command: !price <item name>
-    if (fullContent.toLowerCase().startsWith(`${prefix}price `)) {
-        
-        if (marketData.length === 0) {
-            return message.reply('Error: Market data is unavailable. Check the console for errors.');
-        }
 
-        const command = `${prefix}price `;
-        // Note: Use fullContent here to preserve item name casing
-        const itemName = fullContent.slice(command.length).trim();
-        
-        if (!itemName) {
-            return message.reply(`Please specify the item name. Example: \`!price Jester Hat\``);
-        }
+    // --- 2. Handle Select Menu Interactions (User selection) ---
+    if (interaction.isStringSelectMenu()) {
+        if (!interaction.customId.startsWith(CUSTOM_ID_PREFIX)) return;
 
-        // Search for the item (partial and case-insensitive)
-        const normalizedSearchTerm = itemName.toLowerCase();
-        const foundItem = marketData.find(item => 
-            item.name.toLowerCase().includes(normalizedSearchTerm)
-        );
+        await interaction.deferReply({ ephemeral: true }); // Acknowledge the interaction immediately
+
+        const selectedItemName = interaction.values[0];
+        
+        // Find the selected item from the loaded data
+        const foundItem = marketData.find(item => item.name === selectedItemName);
 
         if (foundItem) {
-            const statusEmoji = foundItem.sales === 'hot' ? '🔥' : '❄️';
-            
-            // Build the Embed response
-            const replyMessage = new EmbedBuilder()
-                .setColor(foundItem.sales === 'hot' ? 0xff6b6b : 0x6bb0ff)
-                .setTitle(`🏷️ ${foundItem.name}`)
-                .addFields(
-                    { name: '💰 Current Price', value: `**${foundItem.price}**`, inline: true },
-                    { name: '🌟 Status', value: `${statusEmoji} ${foundItem.sales === 'hot' ? 'Hot' : 'Cold'}`, inline: true },
-                    { name: '🗓️ Last Update', value: foundItem.lastUpdate, inline: true },
-                    { name: '📦 Category', value: foundItem.category, inline: true }
-                )
-                .setThumbnail(foundItem.icon)
-                .setFooter({ text: 'Market Search powered by Bot' });
-            
-            await message.reply({ embeds: [replyMessage] });
-
+            const priceEmbed = createPriceEmbed(foundItem);
+            // Edit the reply to show the price embed
+            await interaction.editReply({ 
+                content: `You selected **${foundItem.name}**.`, 
+                embeds: [priceEmbed], 
+                components: [] // Remove the menu after selection
+            });
         } else {
-            await message.reply(`Sorry, could not find an item named **${itemName}**. Try searching for part of the name.`);
+            await interaction.editReply({ content: 'Error: Could not find the price for the selected item.', components: [] });
         }
-    }
-    
-    // 4. Ping Command: !ping
-    if (content === `${prefix}ping`) {
-        await message.reply('Pong! Bot is operational.');
     }
 });
 
