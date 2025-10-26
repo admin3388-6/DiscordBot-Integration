@@ -1,10 +1,11 @@
 {
-  "name": "discordbot-integration",
+  "name": "discordbot-market",
   "version": "1.0.0",
-  "description": "Discord bot for market integration.",
+  "description": "Discord bot for market price querying.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "deploy-commands": "node deploy-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.17.1",
