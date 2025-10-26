@@ -1,30 +1,30 @@
-// استدعاء المكتبات الضرورية
-const { Client, GatewayIntentBits } = require('discord.js');
-const fs = require('fs').promises; // لقراءة ملفات النظام
-require('dotenv').config(); // لتعمل متغيرات البيئة مثل BOT_TOKEN
+// Required Libraries
+const { Client, GatewayIntentBits, Events } = require('discord.js');
+const fs = require('fs').promises; // File system module
+require('dotenv').config();
 
-// إعدادات البوت
+// Client Setup
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent, // مهم لقراءة محتوى الأمر
+        GatewayIntentBits.GuildMessages,    // REQUIRED for reading !commands
+        GatewayIntentBits.MessageContent,   // REQUIRED for reading message content
     ],
 });
 
-let marketData = []; // المتغير الذي سيحمل بيانات السوق
+let marketData = []; // Will hold the item data
 
-// دالة تحويل السعر (1b, 50m) إلى رقم 
+// Helper function to parse price (1b, 50m) into a number 
 function parsePrice(priceStr) {
     if (!priceStr) return 0;
     const lowerPrice = priceStr.toLowerCase().replace(/,/g, '');
     let multiplier = 1;
     
-    if (lowerPrice.includes('b')) { // مليار
+    if (lowerPrice.includes('b')) { // billion
         multiplier = 1000000000;
-    } else if (lowerPrice.includes('m')) { // مليون
+    } else if (lowerPrice.includes('m')) { // million
         multiplier = 1000000;
-    } else if (lowerPrice.includes('k')) { // ألف
+    } else if (lowerPrice.includes('k')) { // thousand
         multiplier = 1000;
     }
     
@@ -32,54 +32,56 @@ function parsePrice(priceStr) {
     return isNaN(numericPart) ? 0 : numericPart * multiplier;
 }
 
-// دالة تحميل بيانات السوق
+// Function to load market data from JSON file
 async function loadMarketData() {
     try {
         const data = await fs.readFile('./market_data.json', 'utf8');
         const items = JSON.parse(data);
         
-        // تجهيز البيانات
         marketData = items.map(item => ({
             ...item,
             numericPrice: parsePrice(item.price)
         }));
         
-        console.log(`✅ تم تحميل ${marketData.length} غرضاً من ملف السوق.`);
+        console.log(`✅ Successfully loaded ${marketData.length} items from market_data.json.`);
     } catch (error) {
-        console.error('❌ خطأ فادح: لم يتم العثور على ملف market_data.json أو كان تالفا! لن يتمكن البوت من الرد على أوامر الأسعار.', error);
+        console.error('❌ FATAL ERROR: Could not find or parse market_data.json! Price commands will fail.', error);
         marketData = [];
     }
 }
 
-// تشغيل البوت
-client.once('ready', async () => {
-    // تحميل البيانات عند تشغيل البوت
+// Client Ready Event
+client.once(Events.ClientReady, async () => {
+    // Load data when the bot starts
     await loadMarketData();
 
-    console.log(`✅ البوت جاهز! تم تسجيل الدخول كـ ${client.user.tag}`);
-    console.log(`⚙️ البوت الآن يستطيع الرد على أمر !سعر`);
+    console.log(`✅ Bot is Ready! Logged in as ${client.user.tag}`);
+    console.log(`⚙️ Bot is listening for '!' commands.`);
 });
 
 
-// منطق الرد على الأوامر
-client.on('messageCreate', message => {
+// Message Command Listener
+client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
 
     const prefix = '!';
     const content = message.content.trim();
 
-    // 1. أمر البحث عن السعر
-    if (content.startsWith(`${prefix}سعر `) || content.startsWith(`${prefix}price `)) {
+    // 1. Price Command: !price <item name>
+    if (content.toLowerCase().startsWith(`${prefix}price `)) {
         
-        // تحديد الأمر المستخدم واستخراج اسم الغرض المطلوب
-        const command = content.startsWith(`${prefix}سعر `) ? `${prefix}سعر ` : `${prefix}price `;
+        if (marketData.length === 0) {
+            return message.reply('Error: Market data is unavailable. Check the console for errors.');
+        }
+
+        const command = `${prefix}price `;
         const itemName = message.content.slice(command.length).trim();
         
         if (!itemName) {
-            return message.reply(`الرجاء تحديد اسم الغرض بعد الأمر. مثال: \`!سعر Jester Hat\``);
+            return message.reply(`Please specify the item name. Example: \`!price Jester Hat\``);
         }
 
-        // البحث عن الغرض (البحث الجزئي وغير الحساس لحالة الأحرف)
+        // Search for the item (partial and case-insensitive)
         const normalizedSearchTerm = itemName.toLowerCase();
         const foundItem = marketData.find(item => 
             item.name.toLowerCase().includes(normalizedSearchTerm)
@@ -88,29 +90,29 @@ client.on('messageCreate', message => {
         if (foundItem) {
             const statusEmoji = foundItem.sales === 'hot' ? '🔥' : '❄️';
             
-            // بناء رسالة الرد بتنسيق Embed جميل
+            // Build the Embed response
             const replyMessage = {
                 embeds: [{
-                    color: foundItem.sales === 'hot' ? 0xff6b6b : 0x6bb0ff, // لون أحمر (ساخن) أو أزرق (بارد)
+                    color: foundItem.sales === 'hot' ? 0xff6b6b : 0x6bb0ff, // Red (Hot) or Blue (Cold)
                     title: `🏷️ ${foundItem.name}`,
                     fields: [
                         {
-                            name: '💰 السعر الحالي',
+                            name: '💰 Current Price',
                             value: `**${foundItem.price}**`,
                             inline: true,
                         },
                         {
-                            name: '🌟 الحالة',
-                            value: `${statusEmoji} ${foundItem.sales === 'hot' ? 'ساخن (Hot)' : 'بارد (Cold)'}`,
+                            name: '🌟 Status',
+                            value: `${statusEmoji} ${foundItem.sales === 'hot' ? 'Hot' : 'Cold'}`,
                             inline: true,
                         },
                         {
-                            name: '🗓️ آخر تحديث',
+                            name: '🗓️ Last Update',
                             value: foundItem.lastUpdate,
                             inline: true,
                         },
                         {
-                            name: '📦 التصنيف',
+                            name: '📦 Category',
                             value: foundItem.category,
                             inline: true,
                         },
@@ -119,21 +121,22 @@ client.on('messageCreate', message => {
                         url: foundItem.icon,
                     },
                     footer: {
-                        text: 'بحث السوق عبر البوت',
+                        text: 'Market Search powered by Bot',
                     },
                 }]
             };
-            message.reply(replyMessage);
+            await message.reply(replyMessage);
+
         } else {
-            message.reply(`عفواً، لم أجد غرضاً باسم **${itemName}** في قائمة الأسعار. (حاول كتابة جزء من الاسم فقط).`);
+            await message.reply(`Sorry, could not find an item named **${itemName}**. Try searching for part of the name.`);
         }
     }
     
-    // 2. أمر البينج التجريبي
-    if (content === `${prefix}ping`) {
-        message.reply('Pong! البوت يعمل.');
+    // 2. Ping Command: !ping
+    if (content.toLowerCase() === `${prefix}ping`) {
+        await message.reply('Pong! Bot is operational.');
     }
 });
 
-// تسجيل دخول البوت
+// Bot Login
 client.login(process.env.BOT_TOKEN);
