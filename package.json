@@ -1,7 +1,7 @@
 {
   "name": "discordbot-integration",
   "version": "1.0.0",
-  "description": "Discord bot for web integration.",
+  "description": "Discord bot for market integration.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
