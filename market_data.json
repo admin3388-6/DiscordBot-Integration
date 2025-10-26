@@ -1,0 +1,226 @@
+[
+    {
+        "name": "Jester Hat",
+        "price": "50b",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/GBmTg8n/Jester-Hat-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Jingle Hat",
+        "price": "1.6b",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://www.curseofaros.wiki/images/d/da/Jingle_Hat_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Pumpking Sword",
+        "price": "1.2b",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/CKFPrMZ5/Pumpking-Sword-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Party Hat 1",
+        "price": "1b",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/d4PYmMgn/Party-Hat-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Pack of Snow",
+        "price": "1b",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/d/d9/Pack_of_Snow_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "The Reaper",
+        "price": "860m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://www.curseofaros.wiki/images/a/a3/The_Reaper_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Magic Bag of Treats",
+        "price": "700m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/hxzYLLVX/Magic-Bag-of-Treats-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Head of Baphomet",
+        "price": "500m",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/e/e4/Head_of_Baphomet_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Egg Head",
+        "price": "380m",
+        "lastUpdate": "2025-10-28",
+        "icon": "https://www.curseofaros.wiki/images/2/2d/Egg_Head_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Hand of Baphomet",
+        "price": "300m",
+        "lastUpdate": "2025-10-28",
+        "icon": "https://www.curseofaros.wiki/images/8/8f/Hand_of_Baphomet_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Based Santa Hat",
+        "price": "160m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://www.curseofaros.wiki/images/d/d2/Based_Santa_Hat_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Santa Hat",
+        "price": "110M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/Tq7cZbxZ/Santa-Hat-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Jingle Pants",
+        "price": "65M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/ZbNxKfB/Jingle-Pants-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Pumpking Helm",
+        "price": "60M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/BVnBRW8f/Pumpking-Helm-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Pumpkin Zombie Head",
+        "price": "60m",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/e/ef/Pumpkin_Zombie_Head_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Jingle Top",
+        "price": "50M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/JWbFPBP6/Jingle-Top-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Classy set with juice",
+        "price": "45m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://www.curseofaros.wiki/images/f/f6/Classy_Jacket_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Pumpking Shield",
+        "price": "40m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/CK1zx8j5/Pumpking-Shield-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Party Hat 2",
+        "price": "40m",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/gLV2nsfz/Party-Hat-2-m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Bag of Sweets",
+        "price": "35M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/3yyXZVdX/Bag-of-Sweets-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Christmas Tree Hat",
+        "price": "20m",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/8/80/Christmas_Tree_Hat_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Bag of Tricks",
+        "price": "10M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/d0vhBkCB/Bag-of-Tricks-m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Scrooge Hat",
+        "price": "10m",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/e/e8/Scrooge_Hat_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Scrooge Shirt",
+        "price": "10m",
+        "lastUpdate": "2025-10-29",
+        "icon": "https://www.curseofaros.wiki/images/3/3e/Scrooge_Shirt_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Candy Cane Staff",
+        "price": "10m",
+        "lastUpdate": "2025-10-28",
+        "icon": "https://www.curseofaros.wiki/images/6/61/Candy_Cane_Staff_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Xmas Tree Sword",
+        "price": "5m",
+        "lastUpdate": "2025-10-28",
+        "icon": "https://www.curseofaros.wiki/images/d/d0/Xmas_Tree_Sword_m.png",
+        "category": "Events item",
+        "sales": "hot"
+    },
+    {
+        "name": "Party Hat 3",
+        "price": "4m",
+        "lastUpdate": "2025-10-28",
+        "icon": "https://www.curseofaros.wiki/images/d/de/Party_Hat_3_m.png",
+        "category": "Events item",
+        "sales": "cold"
+    },
+    {
+        "name": "Easter Egg",
+        "price": "1M",
+        "lastUpdate": "2025-10-30",
+        "icon": "https://i.ibb.co/B2dd4Mtz/Easter-Egg-m.gif",
+        "category": "Events item",
+        "sales": "hot"
+    }
+]
