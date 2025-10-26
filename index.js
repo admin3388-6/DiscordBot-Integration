@@ -17,9 +17,22 @@ const client = new Client({
 const PREFIX = '!'; // Define the command prefix
 let marketData = []; // Will hold the item data
 
+// New: Map for Arabic-to-English translation to support Arabic search
+const arabicItemMap = new Map([
+    // أضف هنا المزيد من الترجمات التي تحتاجها - القيمة هنا يجب أن تكون الاسم الإنجليزي الصحيح في market_data.json
+    ['الماس', 'Diamond'],
+    ['دايموند', 'Diamond'],
+    ['ذهب', 'Gold'],
+    ['سيف', 'Sword'],
+    ['فأس', 'Axe'],
+    ['حديد', 'Iron'],
+    ['خشب', 'Wood'],
+    ['درع', 'Armor'],
+]);
+
 // --- Helper Functions ---
 
-// Function to parse price (1b, 50m) into a number for comparison/sorting
+// Function to parse price (1b, 50m) into a number 
 function parsePrice(priceStr) {
     if (!priceStr) return 0;
     const lowerPrice = priceStr.toLowerCase().replace(/,/g, '');
@@ -43,7 +56,6 @@ async function loadMarketData() {
         const data = await fs.readFile('./market_data.json', 'utf8');
         const items = JSON.parse(data);
         
-        // Enhance item data with a numeric price for sorting if needed later
         marketData = items.map(item => ({
             ...item,
             numericPrice: parsePrice(item.price)
@@ -52,7 +64,7 @@ async function loadMarketData() {
         console.log(`✅ Successfully loaded ${marketData.length} items from market_data.json.`);
     } catch (error) {
         console.error('❌ FATAL ERROR: Could not find or parse market_data.json! Commands will fail.', error);
-        marketData = []; // Clear data on failure
+        marketData = []; 
     }
 }
 
@@ -118,7 +130,7 @@ client.on(Events.MessageCreate, async message => {
                 },
                 { 
                     name: `🏷️ \`${PREFIX}price [اسم الغرض]\``, 
-                    value: 'للحصول على **سعر وتفاصيل غرض محدد**. مثال: `!price Diamond`', 
+                    value: 'للحصول على **سعر وتفاصيل غرض محدد**. مثال: `!price Diamond` أو `!price الماس`', 
                     inline: false 
                 },
                 { 
@@ -144,7 +156,6 @@ client.on(Events.MessageCreate, async message => {
 
         if (!query) {
             // Case 1: No query provided (show the list)
-            // Limit the list size to prevent exceeding Discord message limits
             const allItems = marketData.map(item => `\`${item.name}\``);
             
             // Chunk the list into fields
@@ -174,9 +185,18 @@ client.on(Events.MessageCreate, async message => {
         }
 
         // Case 2: Query provided (search for the item)
+        let searchName = query;
+        
+        // Check if the query is an Arabic name and map it to the English name
+        if (arabicItemMap.has(query)) {
+            searchName = arabicItemMap.get(query).toLowerCase();
+        }
+
         const foundItem = marketData.find(item => 
-            item.name.toLowerCase() === query || 
-            item.name.toLowerCase().includes(query)
+            // 1. Exact match with English name (or mapped Arabic name)
+            item.name.toLowerCase() === searchName || 
+            // 2. Partial match with English name (for easier typing)
+            item.name.toLowerCase().includes(searchName)
         );
 
         if (foundItem) {
