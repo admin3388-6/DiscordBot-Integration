@@ -1,0 +1,13 @@
+{
+  "name": "discordbot-integration",
+  "version": "1.0.0",
+  "description": "Discord bot for web integration.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.17.1",
+    "dotenv": "^16.4.5"
+  }
+}
